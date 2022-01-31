@@ -186,6 +186,7 @@ g_num_inverts <-
   geom_line(aes(x = date - (SMA_days - 1)/2, y = SMA(n_inverts, n = SMA_days))) +
   geom_recession_bars(as.Date(graph_start), as.Date(Sys.Date())) +
   scale_x_date(breaks = pretty_breaks(8)) +
+  scale_y_continuous(breaks = pretty_breaks(8)) +
   labs(x = "", y = "", title = "Number of Inverted Yield Curves", 
        subtitle = "Red line = total number of yield curves as of that date")
 
