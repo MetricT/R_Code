@@ -19,7 +19,6 @@ library(rvest)
 ### Set your FRED API key here.  You may request an API key at:
 ### https://research.stlouisfed.org/useraccount/apikeys
 fredr_set_key("YOUR_FRED_API_KEY_HERE")
-fredr_set_key("2534759c75ba3f25da07c3c971f98d0b")
 
 ### What date should the graph start on.
 ### Earliest possible data for T10Y2Y is 1976-06-01.
