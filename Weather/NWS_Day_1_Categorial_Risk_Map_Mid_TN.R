@@ -1,14 +1,15 @@
-### Plots the NWS Day 1 Categorical Risk map for Middle TN - /u/MetricT
+################################################################################
+### Map NWS Day 1 Categorical Risk data for Middle TN - /u/MetricT 
 ### Data from:  https://www.spc.noaa.gov/gis/
+################################################################################
 
 library(tidyverse)
 library(tigris)
 library(scales)
 library(shadowtext)
-library(maps)
 library(sf)
 
-### Limiting the map to just neighboring states helps speed up the rendering
+### Limiting the map to just neighboring states to speed up endering
 tn_neighboring_states <-
   c("01", "05", "13", "17", "18", "21", "28", "29", "37", "39", "45", "47", "51")
 
@@ -21,37 +22,46 @@ map_x_max <- -90.5
 map_y_min <-  34.5
 map_y_max <-  37.0
 
-### Load map of US cities
+### Latitude/Longitude of reference cities
 map_cities <-
-  maps::world.cities %>% 
-  filter(
-    country.etc == "USA",
-    pop >= 100000,
-    long >= map_x_max, long <= map_x_min, 
-    lat >= map_y_min, lat <= map_y_max)
+  tribble(
+    ~name,            ~lat,      ~long,
+    "Nashville",      "36.17", "-86.78",
+    "Memphis",        "35.11", "-90.01",
+    "Knoxville",      "35.97", "-83.95",
+    "Chattanooga",    "35.07", "-85.26",
+    "Clarksville",    "36.56", "-87.35",
+    "Jackson",        "35.61", "-88.81",
+    "Johnson City",   "36.31", "-82.35",
+    "Dyersburg",      "36.03", "-89.39",
+    "Cookeville",     "36.16", "-85.50",
+    "Murfreesboro",   "35.85", "-86.39",
+  ) %>% mutate(lat = as.numeric(lat), long = as.numeric(long))
 
-### Load shapefile with the current day's outlook from NOAA
-day1_categorical <- read_sf("https://www.spc.noaa.gov/products/outlook/day1otlk_cat.kmz")
-
-### Create a local map using a bounding box, and change colors to their standard representation
-map_weather <- day1_categorical %>% st_transform(crs = "NAD83") 
+### Load Day 1 Categorical shapefile from NOAA and apply bounding box
+map_weather <- 
+  "https://www.spc.noaa.gov/products/outlook/day1otlk_cat.kmz" %>%
+  read_sf() %>% 
+  st_transform(crs = "NAD83") 
 
 # Pull the start/end valid dates for the map and convert from UTC to CST
 weather_start <- map_weather %>% st_drop_geometry() %>% select(begin) %>% unique() %>% pull(begin)
 weather_end   <- map_weather %>% st_drop_geometry() %>% select(end)   %>% unique() %>% pull(end)
 
 ### Load state/county outline maps from TIGRIS
-map_county <- 
-  tigris::counties() %>%
-  filter(STATEFP %in% tn_neighboring_states)
+map_county <- tigris::counties() %>% filter(STATEFP %in% tn_neighboring_states)
+map_state  <- tigris::states()
 
-map_state <- 
-  tigris::states()
+### Also fetch data on interstates
+map_interstates <- tigris::primary_roads() %>% filter(RTTYP == "I")
 
-map_interstates <-
-  tigris::primary_roads() %>%
-  filter(RTTYP == "I")
+### Rivers shapefile download at:  https://www.weather.gov/source/gis/Shapefiles/Misc/rs16my07.zip
+map_rivers <- 
+  read_sf("../Shapefiles/NWS/rivers_subset") %>%
+  st_set_crs(., "NAD83") %>%
+  st_crop(., xmin = map_x_min, xmax = map_x_max, ymin = map_y_min, ymax = map_y_max)
 
+### Map the data and done
 weather_map <-
   ggplot() +
   theme_bw() + 
@@ -62,15 +72,15 @@ weather_map <-
     legend.margin=margin(-10, 0, 0, 0)
     ) +
   labs(x = "", y = "", 
-       #x = "Longitude", y = "Latitude",
        title = "NWS Day 1 Categorical Risk Map", 
        subtitle = paste("(valid from ", weather_start, " until ", weather_end, ")", sep = "")) + 
   geom_sf(data = map_weather, aes(fill = Name), color = NA, size = 0.2) + 
   geom_sf(data = map_state, fill = NA, size = 0.7) + 
   geom_sf(data = map_county, fill = NA, size = 0.15) +
-  geom_sf(data = map_interstates, fill = NA, color = "blue", size = 0.5) +
+  geom_sf(data = map_interstates, fill = NA, color = "darkorchid2", size = 0.5) +
   geom_sf(data = map_interstates, fill = NA, color = "white", linetype = "dashed", size = 0.4) +
-  geom_point(data = map_cities, aes(x = long, y = lat), shape = 21, fill = "steelblue4", size = 3) + 
+  geom_sf(data = map_rivers, fill = "blue", color = "steelblue3", size = 0.5) + 
+  geom_point(data = map_cities, aes(x = long, y = lat), shape = 21, fill = "steelblue1", size = 3) + 
   geom_shadowtext(data = map_cities, aes(x = long, y = lat, label = name), color = "white", bg.color = "black", size = 5.5, nudge_y = 0.07) + 
   scale_fill_manual(name = "Categorical Risk", values = c(
     "General Thunder" = "#c0e8c0",
