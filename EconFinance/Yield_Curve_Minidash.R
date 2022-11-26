@@ -365,7 +365,7 @@ get_yield_curve <- function(this_date) {
     rates_sub %>%
     pivot_longer(-date, names_to = "maturity", values_to = "value") %>% 
     mutate(maturity_yr = case_when(
-      maturity == "EFFR"   ~ 1 / 250,
+      maturity == "FedRate"   ~ 1 / 250,
       maturity == "DGS1MO" ~ 0.083333333333,
       maturity == "DGS3MO" ~ 0.25,
       maturity == "DGS6MO" ~ 0.5,
@@ -378,7 +378,7 @@ get_yield_curve <- function(this_date) {
       maturity == "DGS20"  ~ 20,
       maturity == "DGS30"  ~ 30
     )) %>%
-    filter(grepl("DGS|EFFR", maturity)) %>%
+    filter(grepl("DGS|FedRate", maturity)) %>%
     
     # Highlight yield curve inversions
     mutate(
@@ -585,9 +585,11 @@ g_perinverts <-
   )
 print(g_perinverts)
 
-plot_grid(
-  g_yield_curve, 
-  g_yield_curve_spread_properties,
-  g_perinverts,
-  nrow = 3, align = "hv"
+print(
+  plot_grid(
+    g_yield_curve, 
+    g_yield_curve_spread_properties,
+    g_perinverts,
+    nrow = 3, align = "hv"
+  )
 )
