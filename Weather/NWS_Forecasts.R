@@ -84,12 +84,14 @@ model.data <-
   as_tibble() %>%
   mutate(lon   = ifelse(lon > 180, lon - 360, lon))
 
+# Get the date/time of the model run so we can print it on the map
 model.date <-
   model.data %>% 
   pull(forecast.date) %>% 
   tail(n = 1) %>% 
   with_tz(tzone = "America/Chicago")
 
+# Print the map and done
 g_temperature <- 
   ggplot() + 
   theme_bw() +
